@@ -37,6 +37,23 @@ contract FundMe {
         i_owner = msg.sender;
     }
 
+    // Anyone can call fund() so we have to make it as public
+    // Todo
+    // Allow users to send money
+    // Set a minimum amount of $5
+
+    // 1. How do we send ETH to this contract?
+    // Whenever we send a transaction on the blockchain there is a "VALUE" field populated
+    // most of the time it is sent with 0 WEI if no ether is sent
+
+    // To make a function receive ether we have to make the function "PAYABLE"
+    // To access the funds sent to the contract we can use "msg.value"
+
+    // Revert -> undo any actions that have been done, and send the remaining gas back
+    // If a tx reverts in the middle of a process, any changes done to the blockchain will be reverted 
+    // However let's say user sent 2100 gas to make a tx and before reverting 1000 gas has been used
+    // Remaining 1100 gas will be reverted to the user.
+
     function fund() public payable{
         uint256 ethPriceInUsd = (msg.value).getConversionRate();
         // require(ethPriceInUsd >= MINIMUM_USD, "Minimum of 5 USD is required");
