@@ -1,10 +1,18 @@
+// Todo
+// Get funds from users
+// Allow owner to withdraw funds
+// Set a minimum funding value in USD
+
+// Note
+// similar to wallets, Smart Contracts can hold funds as well
+// To receive funds, we have to make the function payable
+
+// 1 ETH = 1e18 = 1000000000000000000 WEI = 1 * 10 ** 18 
+
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import {PriceConverter} from "./PriceConverter.sol";
-
-// similar to wallets, contracts can hold funds as well
-// To receive fund, we have to make the function as payable
 
 // cutom errors
 error FundMe__NOT_OWNER();
