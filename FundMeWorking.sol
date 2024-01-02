@@ -15,19 +15,33 @@ pragma solidity 0.8.18;
 
 import {PriceConverter} from "./PriceConverter.sol";
 
+// cutom errors
+error FundMe__NOT_OWNER();
+error FundMe__WITHDRAW_FAILED();
+error FundMe__NOT_ENOUGH_ETH();
+
 contract FundMe {
 
     address internal immutable i_priceFeedAddress;
     // price feed address for ETH/USD
 
+    address public immutable i_owner;
+
     constructor() {
         i_priceFeedAddress = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+        i_owner = msg.sender;
     }
+    // when the contract gets deployed
+    // constructor will be automatically called and executed
+
+    // by using "constant" and "immutable" we are able to save gas
+    // Reason for that is instead of storing these variables into storage slots
+    // We actually store them directly into the byte code of the contract
 
     using PriceConverter for uint256;
     // for all uint256 we can use the PriceConverter library
 
-    uint256 public minimumUsd = 5e18;
+    uint256 public constant MINIMUM_USD = 5e18;
     // since priceInUsd will have 18 decimals, minimum USD should also have 18 decimals
 
     address[] public s_funders;
@@ -57,8 +71,8 @@ contract FundMe {
 
     function fund() public payable {
 
-        if(msg.value.getConversionRate(i_priceFeedAddress) < minimumUsd){
-            revert("Not Enough ETH");
+        if(msg.value.getConversionRate(i_priceFeedAddress) < MINIMUM_USD){
+            revert FundMe__NOT_ENOUGH_ETH();
         }
         // since we are using PriceConverter library
         // uint256 is the first input variable type to getConversionRate()
@@ -77,7 +91,7 @@ contract FundMe {
 
     // this is not the efficient way to withdraw
     // refer Foundry_FundMe
-    function withdraw() public {
+    function withdraw() public onlyOwner {
         for(uint256 funderIndex = 0; funderIndex < s_funders.length; funderIndex++){
             address funder = s_funders[funderIndex];
             addressToAmountFunded[funder] = 0;
@@ -88,5 +102,61 @@ contract FundMe {
         // since all the amount funded got withdrawn
         // we have to reset the funders[]
         // (0) -> start at 0. 
+
+        (bool sent,) = payable(i_owner).call{value: address(this).balance}("");
+
+        // To send ETH from this contract to EOA or other contracts
+        // use the recommended call method
+        // call (forward all gas or set gas, returns bool)
+        // to send ether, receiving address has to be marked as type payable
+
+        // "this" refers to the current contract
+
+        if(!sent){
+            revert FundMe__WITHDRAW_FAILED();
+        }
     }
+
+    modifier onlyOwner {
+        if(msg.sender != i_owner){
+            revert FundMe__NOT_OWNER();
+        }
+        _;
+
+        // If we didn't use custom errors
+        // Then we are storing this string as string array in memory
+        // For example, a string "Hello" would be stored as an array of bytes [72, 101, 108, 108, 111], 
+        // where each byte represents the ASCII value of the corresponding character.
+
+        // By using revert, we can return the error code instead of string
+        // using custom erros is gas efficient
+    }
+
+    // Function to receive Ether. when msg.data must be empty
+    receive() external payable {
+        fund();
+    }
+    // receiver() must have external visibility and payable state mutability.
+
+    // Fallback function is called when msg.data is not empty
+    // when we send some data, it will check whether it matches with any of the functions defined.
+    // If none of the function is matched, it will look for the fallback()
+    fallback() external payable {
+        fund();
+    }
+    // fallback() must have external visibility and payable state mutability.
 }
+
+/*
+           send Ether
+               |
+         msg.data is empty?
+              / \
+            yes  no
+            /     \
+receive() exists?  fallback()
+         /   \
+        yes   no
+        /      \
+    receive()   fallback()
+*/
