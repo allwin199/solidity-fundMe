@@ -1,45 +1,71 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
-import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-// Solidity only works with whole numbers
+// library is similar to a contract
+//  but you can't declare any state variable and you can't send ether.
+// A library is embedded into the contract if all library functions are internal.
 
-library PriceConverter{
+library PriceConverter {
 
-    function getPrice() internal view returns(uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-        (,int256 price,,,) = priceFeed.latestRoundData();
+    // get the price for ETH/USD
 
-        // this price will return a number with 8 decimal places.
-        // msg.value will be 18 decimal places, because of wei
-        // we have to convert this price to wei.
-        // we have to add 10 deciamls
-        // if we do price * 1e10 it will get matched
-        // we are converting price into a 18 deciaml number
-        // since price is int256 and msg.value is uint256
-        // we have to convert price to uint256
+    function getPrice(address priceFeedAddress) internal view returns(uint256) {
+        // To find the price of ETH/USD
+        // we need that contact address and
+        // ABI -> ABI exposes all the functions available in that contract
+        // using this ABI, external contracts can interact with that contract
+        // 0x694AA1769357215DE4FAC081bf1f309aDC325306
 
-        return uint256(price * 1e10);
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
+        (,int price,,,) = priceFeed.latestRoundData();
+
+        // Note
+        // this price will give the Price of ETH in terms of USD
+        // price will have 8 deciaml places
+        // msg.value will be in terms of WEI which means 18 decimal places
+        // to matchup price and msg.value we have to convert price to 18 deciamls
+        // price has already 8 decimal places we have to add another 10 decimals
+        // price * 1e10 will convert price into 18 decimals
+        // price is int and msg.value is uint
+        // let's convert everything into uint256
+
+        return uint256(price*1e10);
+
+        // Now this getPrice() will return price of 1 ETH in terms of USD
+        
     }
 
-    function getConversionRate(uint256 ethAmount) internal view returns(uint256) {
-        // 1 ETH ?
-        // To get the price of 1 ETH in USD, we are calling the getPrice()
-        
-        uint256 ethPrice = getPrice();
-        // It will return something like
-        // 2000_000000000000000000 // 2000*1e18
+    // get the conversion rate
+    // If msg.value = 0.1 ETH then what is the value in USD?
 
-        uint256 ethAmountInUsd = (ethPrice * ethAmount) / 1e18;
-        // user will send some amount to the contract and it will be in wei
-        // now we have to convert that value to USD
-        // we already know the price of 1ETH in USD
-        // if the user sent 1ETH it will be 1e18
-        // now to get the value of 1ETH in USD we have to multiple.
-        // since both the units will contain 18 decimals by multiplying we will get total of 36 decimals
-        // so we are diving by 1e18 to negate 18 decimals.
+    function getConversionRate(uint256 ethAmount, address priceFeedAddress) internal view returns(uint256) {
+
+        // this getConversionRate will get msg.value and ethPrice can be obtained from getPrice()
+
+        // step1
+        // get the price of ETH using getPrice()
+        uint256 ethPrice = getPrice(priceFeedAddress);
+
+        
+        // if msg.value is 1 ETH then 1e18*return val of getPrice()
+        // for eg return value of getPrice() is 2000e18
+        // then 1e18 * 2000e18 = 2000e36
+        // since we need only 18 decimals we have to divide it by 18
+        // 2000e36/1e18 = 2000e18
+        // if msg.value is 0.5 ETH
+        // then 0.5e18 * 2000e18 = 1000e36
+        // 1000e36/1e18 = 1000e18
+
+        uint256 ethAmountInUsd = (ethAmount * ethPrice) / 1e18;
+
+        // let's say ethAmount is 0.5e18
+        // ethPrice = 2000e18
+        // ethAmountInUsd = (0.5e18 * 2000e18)/1e18
+        // ethAmountInusd = 1000e18
 
         return ethAmountInUsd;
+
     }
 }
