@@ -13,17 +13,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {PriceConverter} from "./PriceConverter.sol";
 
 contract FundMe {
+
+    address internal immutable i_priceFeedAddress;
+    // price feed address for ETH/USD
+
+    constructor() {
+        i_priceFeedAddress = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+    }
+
+    using PriceConverter for uint256;
+    // for all uint256 we can use the PriceConverter library
 
     uint256 public minimumUsd = 5e18;
     // since priceInUsd will have 18 decimals, minimum USD should also have 18 decimals
 
-    address[] public funders;
+    address[] public s_funders;
     // whenver someone funds this contract, their address will be stored in this array to keep trace of all the funders
     // using array, we can keep track of all the funders, but we cannot keep track of the amount each funder funded
     // for that we have to use mapping
+    // since funders is a storage variable we use s_funders
 
     mapping (address funder => uint256 amountFunded) public addressToAmountFunded;
 
@@ -45,11 +56,17 @@ contract FundMe {
     // Remaining 1100 gas will be reverted to the user.
 
     function fund() public payable {
-        if(getConversionRate(msg.value) < minimumUsd){
+
+        if(msg.value.getConversionRate(i_priceFeedAddress) < minimumUsd){
             revert("Not Enough ETH");
         }
+        // since we are using PriceConverter library
+        // uint256 is the first input variable type to getConversionRate()
+        // when we are using library, the first input variable is the type we are using with the library
+        // msg.value is of type uint256
+        // therfore msg.value is passed inside the getConversionRate() as first variable
 
-        funders.push(msg.sender);
+        s_funders.push(msg.sender);
         // msg.sender will hold the address of the sender
 
         addressToAmountFunded[msg.sender] += msg.value;
@@ -58,64 +75,18 @@ contract FundMe {
 
     }
 
-    // get the price for ETH/USD
-    function getPrice() public view returns(uint256) {
-        // To find the price of ETH/USD
-        // we need that contact address and
-        // ABI -> ABI exposes all the functions available in that contract
-        // using this ABI, external contracts can interact with that contract
+    // this is not the efficient way to withdraw
+    // refer Foundry_FundMe
+    function withdraw() public {
+        for(uint256 funderIndex = 0; funderIndex < s_funders.length; funderIndex++){
+            address funder = s_funders[funderIndex];
+            addressToAmountFunded[funder] = 0;
+        }
+        // resetting all the amounts to 0
 
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-        (,int price,,,) = priceFeed.latestRoundData();
-
-        // Note
-        // this price will give the Price of ETH in terms of USD
-        // price will have 8 deciaml places
-        // msg.value will be in terms of WEI which means 18 decimal places
-        // to matchup price and msg.value we have to convert price to 18 deciamls
-        // price has already 8 decimal places we have to add another 10 decimals
-        // price * 1e10 will convert price into 18 decimals
-        // price is int and msg.value is uint
-        // let's convert everything into uint256
-
-        return uint256(price*1e10);
-
-        // Now this getPrice() will return price of 1 ETH in terms of USD
-        
+        s_funders = new address[](0);
+        // since all the amount funded got withdrawn
+        // we have to reset the funders[]
+        // (0) -> start at 0. 
     }
-
-    // get the conversion rate
-    // If msg.value = 0.1 ETH then what is the value in USD?
-
-    function getConversionRate(uint256 ethAmount) public view returns(uint256) {
-
-        // this getConversionRate will get msg.value and ethPrice can be obtained from getPrice()
-
-        // step1
-        // get the price of ETH using getPrice()
-        uint256 ethPrice = getPrice();
-
-        
-        // if msg.value is 1 ETH then 1e18*return val of getPrice()
-        // for eg return value of getPrice() is 2000e18
-        // then 1e18 * 2000e18 = 2000e36
-        // since we need only 18 decimals we have to divide it by 18
-        // 2000e36/1e18 = 2000e18
-        // if msg.value is 0.5 ETH
-        // then 0.5e18 * 2000e18 = 1000e36
-        // 1000e36/1e18 = 1000e18
-
-        uint256 ethAmountInUsd = (ethAmount * ethPrice) / 1e18;
-
-        // let's say ethAmount is 0.5e18
-        // ethPrice = 2000e18
-        // ethAmountInUsd = (0.5e18 * 2000e18)/1e18
-        // ethAmountInusd = 1000e18
-
-        return ethAmountInUsd;
-
-    }
-
-
-    // function withdraw() public {}
 }
