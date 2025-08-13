@@ -37,19 +37,24 @@ library PriceConverter {
         
     }
 
-    // get the conversion rate
-    // If msg.value = 0.1 ETH then what is the value in USD?
-
     function getConversionRate(uint256 ethAmount, address priceFeedAddress) internal view returns(uint256) {
+        // get the conversion rate
+        // If msg.value = 0.1 ETH then what is the value in USD?
+        // Since we already have value of 1ETH in USD
+        // let's convert the (msg.value) which will be in ETH to USD
 
-        // this getConversionRate will get msg.value and ethPrice can be obtained from getPrice()
+        // this getConversionRate will get (msg.value) which is "ethAmount" and ethPrice can be obtained from getPrice()
 
         // step1
         // get the price of ETH using getPrice()
-        uint256 ethPrice = getPrice(priceFeedAddress);
+        uint256 ethPrice = getPrice(priceFeedAddress); 
+        // let's assume 1ETH = 2000e8,to be compatible with ethereum which is 18 decimals
+        // We have to add 10 zeros with this and the final will be 2000e18
+        // now 1ETH = 2000e18
 
-        
-        // if msg.value is 1 ETH then 1e18*return val of getPrice()
+        uint256 ethAmountInUsd = (ethAmount * ethPrice) / 1e18;
+
+        // if msg.value is 1 ETH
         // for eg return value of getPrice() is 2000e18
         // then 1e18 * 2000e18 = 2000e36
         // since we need only 18 decimals we have to divide it by 18
@@ -58,12 +63,17 @@ library PriceConverter {
         // then 0.5e18 * 2000e18 = 1000e36
         // 1000e36/1e18 = 1000e18
 
-        uint256 ethAmountInUsd = (ethAmount * ethPrice) / 1e18;
-
         // let's say ethAmount is 0.5e18
         // ethPrice = 2000e18
         // ethAmountInUsd = (0.5e18 * 2000e18)/1e18
         // ethAmountInusd = 1000e18
+
+        // let's say ethAmount is 0.1e18
+        // ethPrice = 2000e18
+        // ethAmountInUsd = (0.1e18 * 2000e18)/1e18 => 200e36/1e18
+        // ethAmountInusd = 200e18
+
+        // Important: Multiply before Divide
 
         return ethAmountInUsd;
 
