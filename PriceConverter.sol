@@ -52,7 +52,7 @@ library PriceConverter {
         // We have to add 10 zeros with this and the final will be 2000e18
         // now 1ETH = 2000e18
 
-        uint256 ethAmountInUsd = (ethAmount * ethPrice) / 1e18;
+        uint256 valueof1EthAmountInUsd = (ethAmount * ethPrice) / 1e18;
 
         // if msg.value is 1 ETH
         // for eg return value of getPrice() is 2000e18
@@ -65,17 +65,17 @@ library PriceConverter {
 
         // let's say ethAmount is 0.5e18
         // ethPrice = 2000e18
-        // ethAmountInUsd = (0.5e18 * 2000e18)/1e18
-        // ethAmountInusd = 1000e18
+        // valueof1EthAmountInUsd = (0.5e18 * 2000e18)/1e18
+        // valueof1EthAmountInUsd = 1000e18
 
         // let's say ethAmount is 0.1e18
         // ethPrice = 2000e18
-        // ethAmountInUsd = (0.1e18 * 2000e18)/1e18 => 200e36/1e18
-        // ethAmountInusd = 200e18
+        // valueof1EthAmountInUsd = (0.1e18 * 2000e18)/1e18 => 200e36/1e18
+        // valueof1EthAmountInUsd = 200e18
 
         // Important: Multiply before Divide
 
-        return ethAmountInUsd;
+        return valueof1EthAmountInUsd;
 
     }
 }
