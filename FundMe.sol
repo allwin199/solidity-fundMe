@@ -80,6 +80,14 @@ contract FundMe {
         // msg.value is of type uint256
         // therfore msg.value is passed inside the getConversionRate() as first variable
 
+        // let's say user sent 0.1ETH to this contract
+        // 0.1 ETH have to be converted to USD to check whether it is greater than MINIMUM_USD
+        // Let's assume value of 1ETH in USD => 2000e18
+        // Then, (0.1e18 * 2000e18) / 1e18 => 200e18
+        // The value of 0.1 ETH is 200e18
+        // Minimum USD => 5e18
+        // 200e18 > 5e18
+
         s_funders.push(msg.sender);
         // msg.sender will hold the address of the sender
 
