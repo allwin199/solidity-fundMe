@@ -37,7 +37,7 @@ library PriceConverter {
         
     }
 
-    function getConversionRate(uint256 ethAmount, address priceFeedAddress) internal view returns(uint256) {
+    function getConversionRate(uint256 ethAmountSentByUser, address priceFeedAddress) internal view returns(uint256) {
         // get the conversion rate
         // If msg.value = 0.1 ETH then what is the value in USD?
         // Since we already have value of 1ETH in USD
@@ -46,13 +46,13 @@ library PriceConverter {
         // this getConversionRate will get (msg.value) which is "ethAmount" and ethPrice can be obtained from getPrice()
 
         // step1
-        // get the price of ETH using getPrice()
-        uint256 ethPrice = getPrice(priceFeedAddress); 
+        // get the price of 1 ETH using getPrice()
+        uint256 valueof1EthAmountInUsd = getPrice(priceFeedAddress); 
         // let's assume 1ETH = 2000e8,to be compatible with ethereum which is 18 decimals
         // We have to add 10 zeros with this and the final will be 2000e18
         // now 1ETH = 2000e18
 
-        uint256 valueof1EthAmountInUsd = (ethAmount * ethPrice) / 1e18;
+        uint256 usdValueOfEthSentByUser = (ethAmountSentByUser * valueof1EthAmountInUsd) / 1e18;
 
         // if msg.value is 1 ETH
         // for eg return value of getPrice() is 2000e18
@@ -65,17 +65,17 @@ library PriceConverter {
 
         // let's say ethAmount is 0.5e18
         // ethPrice = 2000e18
-        // valueof1EthAmountInUsd = (0.5e18 * 2000e18)/1e18
-        // valueof1EthAmountInUsd = 1000e18
+        // usdValueOfEthSentByUser = (0.5e18 * 2000e18)/1e18
+        // usdValueOfEthSentByUser = 1000e18
 
         // let's say ethAmount is 0.1e18
         // ethPrice = 2000e18
-        // valueof1EthAmountInUsd = (0.1e18 * 2000e18)/1e18 => 200e36/1e18
-        // valueof1EthAmountInUsd = 200e18
+        // usdValueOfEthSentByUser = (0.1e18 * 2000e18)/1e18 => 200e36/1e18
+        // usdValueOfEthSentByUser = 200e18
 
         // Important: Multiply before Divide
 
-        return valueof1EthAmountInUsd;
+        return usdValueOfEthSentByUser;
 
     }
 }
