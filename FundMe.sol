@@ -140,11 +140,11 @@ contract FundMe {
         // using custom erros is gas efficient
     }
 
-    // Function to receive Ether. when msg.data must be empty
+    // Function to receive Ether. when msg.data is empty
     receive() external payable {
         fund();
     }
-    // receiver() must have external visibility and payable state mutability.
+    // receive() must have external visibility and payable state mutability.
 
     // Fallback function is called when msg.data is not empty
     // when we send some data, it will check whether it matches with any of the functions defined.
